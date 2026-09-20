@@ -1,8 +1,25 @@
 # baidu-netdisk
 
-百度网盘 AI Agent 工具集合：**Skill（下载/上传脚本）+ MCP Server（远程 SSE + 本地 stdio 上传）**，共用同一份 access_token，可互相补齐能力。
+百度网盘 AI Agent 工具集合：**Skill（MCP 优先 + 脚本回落）**，内置于仓库的 MCP Server（远程 SSE + 本地 stdio 上传），两侧共用同一 access_token。
 
 面向 [opencode](https://opencode.ai) / Claude Code / Cursor 等支持 Skill 与 MCP 的 Agent。
+
+## 工作方式
+
+Skill 是**总入口**，按「先 MCP、后脚本」分流：
+
+```
+用户请求
+   │
+   ├─ 列表 / 搜索 / 详情 / 建目录 / 复制 / 移动 / 重命名 / 删除 /
+   │  分享 / 容量 / 用户信息 / URL 或文本上传   ──►  MCP 工具
+   │
+   └─ 下载到本地 / 目录递归 / 分享链接下载 / 本地文件上传
+        ├─ 先看 MCP 有没有对应工具（如 upload_file）→ 有就用
+        └─ MCP 做不到或失败 → 回落 skill 脚本
+```
+
+分流细节见 `skill/SKILL.md`。
 
 ## 目录结构
 
@@ -24,18 +41,21 @@ baidu-netdisk/
 
 ## 能力矩阵
 
-| 能力 | MCP（远程 SSE） | Skill（脚本） |
-|------|:---:|:---:|
-| 文件列表 / 搜索（关键词、语义） | ✅ | — |
-| 移动 / 复制 / 重命名 / 建目录 | ✅ | — |
-| 分享链接生成 | ✅ | — |
-| 用户信息 / 容量查询 | ✅ | — |
-| 上传（URL / 文本） | ✅ | — |
-| **下载到本地** | ❌ | ✅ |
-| 上传本地文件（含 >4MB 分片） | ✅（需本地 stdio） | ✅ |
-| 目录递归上传 / 下载 | ❌ | ✅ |
+| 能力 | 提供方 | 说明 |
+|------|--------|------|
+| 文件列表 / 文档 / 图片 / 视频列表 | MCP | `file_list`、`file_doc_list`、`file_image_list`、`file_video_list` |
+| 关键词搜索 / 语义搜索 | MCP | `file_keyword_search`、`file_semantics_search` |
+| 文件详情 | MCP | `file_meta` |
+| 建目录 / 复制 / 移动 / 重命名 / 删除 | MCP | `make_dir`、`file_copy`、`file_move`、`file_rename`、`file_del` |
+| 分享链接生成 | MCP | `file_sharelink_set` |
+| 用户信息 / 容量 | MCP | `user_info`、`get_quota` |
+| URL / 文本上传 | MCP | `file_upload_by_url`、`file_upload_by_content` |
+| 本地上传（含 >4MB 分片） | MCP（stdio）/ 脚本 | MCP `upload_file`，或 `skill/scripts/upload.py` |
+| **下载到本地** | **脚本** | `skill/scripts/baidu_netdisk_download.py` |
+| **目录递归下载 / 上传** | **脚本** | 目录自动递归；上传可 `--flat` 平铺 |
+| **分享链接下载** | **脚本** | 转存后下载 |
 
-> 远程 SSE 没有「下载」能力，这是本仓库提供 Skill 脚本的主要原因。
+> 远程 SSE 没有「下载」能力，这是仓库内置下载脚本的主要原因。
 
 ## 安装
 
