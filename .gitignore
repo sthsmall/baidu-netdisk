@@ -1,0 +1,25 @@
+# 凭证与本地环境，禁止提交
+.env
+.env.*
+access_token
+*.token
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.python-version
+
+# 构建产物 / 临时文件
+*.part
+*.egg-info/
+dist/
+build/
+
+# 编辑器 / 系统
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
